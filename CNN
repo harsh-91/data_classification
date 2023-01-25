@@ -1,0 +1,78 @@
+import numpy as np
+from keras.datasets import mnist
+from keras.utils import np_utils
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Conv2D, MaxPooling2D, Flatten
+from imblearn.over_sampling import SMOTE
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
+# Load your dataset
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+# Reshape the data
+X_train = X_train.reshape(X_train.shape[0], 28, 28, 1)
+X_test = X_test.reshape(X_test.shape[0], 28, 28, 1)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Oversample using SMOTE
+sm = SMOTE(random_state=42)
+X_train_res, y_train_res = sm.fit_resample(X_train, y_train)
+
+# Convert data type and normalize values
+X_train_res = X_train_res.astype('float32')
+X_test = X_test.astype('float32')
+X_train_res /= 255
+X_test /= 255
+
+# Convert labels to categorical
+y_train_res = np_utils.to_categorical(y_train_res, 10)
+y_test = np_utils.to_categorical(y_test, 10)
+
+# Build the model
+model = Sequential()
+model.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(28, 28, 1)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dense(10, activation='softmax'))
+
+# Compile the model
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# Fit the model
+model.fit(X_train_res, y_train_res, batch_size=32, epochs=10, validation_data=(X_test, y_test))
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+y_pred = np.argmax(y_pred, axis=1)
+
+# Determine the accuracy of the model
+acc = accuracy_score(y_test, y_pred)
+print("Accuracy: ", acc)
+
+
+'''The above code is a python script that uses the Keras library to train a convolutional neural network (CNN) 
+on an oversampled dataset and determine the accuracy of an existing dataset. Here is a breakdown of the code:
+
+1. The script starts by importing the necessary libraries, including numpy, the mnist dataset from keras, and the 
+SMOTE class from imblearn for oversampling the data. 
+2. It loads the mnist dataset using the mnist.load_data() function and reshape the data 
+using X_train.reshape(X_train.shape[0], 28, 28, 1) and X_test.reshape(X_test.shape[0], 28, 28, 1)
+3. Next, it splits the data into training and testing sets using train_test_split function from sklearn.
+4. Then it uses the SMOTE class to oversample the training data. SMOTE will create new synthetic samples in 
+the minority class by interpolating between existing samples. 
+5. After that, it converts the data type of the training and test data to float32 and normalize the values by dividing each 
+pixel value by 255. 
+6.It converts the labels to categorical by using np_utils.to_categorical(y_train_res, 10) and np_utils.to_categorical(y_test, 10).
+7. It builds the CNN model using the Sequential class from keras, where it adds a convolutional layer, max pooling layer,
+flatten layer, dense layer, and the output layer. 
+8. Then it compiles the model using model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy']) .
+9. The model is then fit to the oversampled training data for 10 epochs with a batch size of 32 and validation data is set to test data.
+10. The script then makes predictions on the test set using model.predict(X_test) and converts the predictions to the class labels by
+using np.argmax(y_pred, axis=1).
+11. Finally, it determines the accuracy of the model by using sklearn's accuracy_score function on the test set and y_predictions, and then prints the accuracy.
+
+It's important to note that this script uses the mnist dataset, you'll need to modify it in order to use your own dataset. Also, the architecture of the CNN model and the parameters of the optimizer and the training process can be adjusted and fine-tuned to improve the performance of the model'''
